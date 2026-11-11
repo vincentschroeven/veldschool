@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1d5a49">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Veldschool">
+<title>Veldschool Bois Laiterie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a field notebook. One step per screen, a mono "label strip" on top like a survey sheet, marking-tape orange only for the thing you act on. */
+:root{
+  --bg:#e9eee8;
+  --surface:#f9fbf8;
+  --ink:#15241d;
+  --muted:#57675f;
+  --line:#c9d3cb;
+  --spruce:#1d5a49;
+  --spruce-soft:#d9e8e1;
+  --tape:#d9501a;
+  --good:#1f7a4d;
+  --bad:#b3372b;
+  --display:"Bricolage Grotesque","Trebuchet MS",sans-serif;
+  --body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#101815;--surface:#18231f;--ink:#e6ede8;--muted:#9bada3;--line:#2c3b34;
+    --spruce:#7cc4ad;--spruce-soft:#20332c;--tape:#ff7a3d;--good:#62c48f;--bad:#ef7d70;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#101815;--surface:#18231f;--ink:#e6ede8;--muted:#9bada3;--line:#2c3b34;
+  --spruce:#7cc4ad;--spruce-soft:#20332c;--tape:#ff7a3d;--good:#62c48f;--bad:#ef7d70;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.55;-webkit-text-size-adjust:100%}
+.wrap{max-width:640px;margin:0 auto;padding:calc(16px + env(safe-area-inset-top,0px)) 18px 96px}
+header.top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-family:var(--mono);font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:10px}
+header.top b{color:var(--ink);font-weight:500}
+.dots{display:flex;gap:5px;margin:14px 0 22px}
+.dots span{flex:1;height:5px;border-radius:3px;background:var(--line)}
+.dots span.done{background:var(--spruce)}
+.dots span.now{background:var(--tape)}
+.step{display:none}
+.step.on{display:block}
+.kicker{font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--spruce);margin:0 0 6px}
+h1,h2{font-family:var(--display);font-weight:700;line-height:1.1;text-wrap:balance;margin:0 0 14px;letter-spacing:-.01em}
+h1{font-size:34px}
+h2{font-size:28px}
+h3{font-family:var(--display);font-weight:500;font-size:19px;margin:26px 0 8px}
+p{margin:0 0 14px}
+.lead{font-size:19px}
+.muted{color:var(--muted)}
+.small{font-size:14.5px}
+ul{margin:0 0 14px;padding-left:20px}
+li{margin-bottom:6px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;margin:0 0 14px}
+.plot{border-left:4px solid var(--tape)}
+.plot .tag,.bridge .tag{display:block;font-family:var(--mono);font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px}
+.plot .tag{color:var(--tape)}
+.bridge{background:var(--spruce-soft);border-color:transparent}
+.bridge .tag{color:var(--spruce)}
+.card p:last-child{margin-bottom:0}
+details.think{background:var(--surface);border:1px dashed var(--spruce);border-radius:10px;margin:0 0 16px}
+details.think summary{cursor:pointer;padding:14px 16px;font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:12px;align-items:center}
+details.think summary::-webkit-details-marker{display:none}
+details.think summary::after{content:"toon";font-family:var(--mono);font-size:12px;font-weight:400;color:var(--tape);text-transform:uppercase;letter-spacing:.05em;flex:none}
+details.think[open] summary::after{content:"verberg"}
+details.think .in{padding:0 16px 14px}
+details.think .in p:last-child{margin-bottom:0}
+/* succession strip */
+.succ{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;align-items:end;height:150px;margin:8px 0 4px}
+.succ div{background:var(--spruce);border-radius:4px 4px 0 0;position:relative;opacity:.45}
+.succ div.here{opacity:1;background:var(--tape)}
+.succ-l{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;font-family:var(--mono);font-size:10.5px;text-align:center;color:var(--muted);margin-bottom:6px}
+.succ-l b{color:var(--tape);font-weight:500}
+.arrow{font-family:var(--mono);font-size:12px;color:var(--muted);display:flex;justify-content:space-between;margin-bottom:14px}
+/* chooser */
+.opts{display:grid;gap:8px;margin:0 0 14px}
+.opts button,.q button{font:inherit;text-align:left;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;cursor:pointer}
+.opts button[aria-pressed="true"]{border-color:var(--tape);box-shadow:inset 4px 0 0 var(--tape)}
+.out{min-height:120px}
+.out .yr{font-family:var(--mono);font-size:12px;color:var(--spruce);text-transform:uppercase;letter-spacing:.05em}
+/* species */
+.spp{display:grid;gap:8px;margin-bottom:14px}
+.sp{font:inherit;color:var(--ink);text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:13px 14px;cursor:pointer;width:100%}
+.sp .nl{font-family:var(--display);font-weight:500;font-size:19px;display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.sp .nl i{font-family:var(--mono);font-style:normal;font-size:11.5px;color:var(--tape);text-transform:uppercase;letter-spacing:.05em;flex:none}
+.sp .back{display:none;margin-top:8px;font-size:15.5px}
+.sp.open .back{display:block}
+.sp.open .nl i{color:var(--muted)}
+.sp .fr{font-family:var(--mono);font-size:14px;color:var(--spruce)}
+/* quiz */
+.q{margin-bottom:22px}
+.q p.qq{font-weight:600;margin-bottom:8px}
+.q .a{display:grid;gap:6px}
+.q button.ok{border-color:var(--good);box-shadow:inset 4px 0 0 var(--good)}
+.q button.no{border-color:var(--bad);box-shadow:inset 4px 0 0 var(--bad)}
+.q button:disabled{cursor:default;opacity:1;color:var(--ink)}
+.q .why{display:none;margin-top:8px;font-size:15.5px;color:var(--muted)}
+.q.done .why{display:block}
+.score{font-family:var(--display);font-size:22px;font-weight:700}
+/* checklist */
+.chk{display:grid;gap:8px;margin-bottom:14px}
+.chk label{display:flex;gap:12px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;cursor:pointer}
+.chk input{width:20px;height:20px;margin-top:3px;accent-color:var(--tape);flex:none}
+.open-q{font-family:var(--display);font-size:22px;line-height:1.25;font-weight:500;text-wrap:balance}
+/* nav */
+nav.bar{position:fixed;left:0;right:0;bottom:0;background:var(--bg);border-top:1px solid var(--line);padding:10px 18px calc(10px + env(safe-area-inset-bottom,0px))}
+nav.bar .in{max-width:640px;margin:0 auto;display:flex;gap:10px}
+nav.bar button{font:inherit;font-weight:600;border-radius:10px;padding:13px 16px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+nav.bar #next{flex:1;background:var(--spruce);border-color:var(--spruce);color:var(--bg)}
+nav.bar button:disabled{opacity:.35;cursor:default}
+button:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid var(--tape);outline-offset:2px}
+a{color:var(--spruce)}
+footer{margin-top:28px;border-top:1px solid var(--line);padding-top:12px}
+
+.home h1{margin-bottom:10px}
+.mods{display:grid;gap:10px;margin:18px 0}
+.mod{font:inherit;color:var(--ink);text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:15px 16px;cursor:pointer;width:100%;display:grid;gap:4px}
+.mod .t{font-family:var(--display);font-weight:700;font-size:21px;line-height:1.15}
+.mod .m{font-family:var(--mono);font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--spruce)}
+.mod .p{font-size:14.5px;color:var(--muted)}
+.mod.busy{box-shadow:inset 4px 0 0 var(--tape)}
+.mod.later{cursor:default;opacity:.55;border-style:dashed}
+.module,.home{display:none}
+.module.on,.home.on{display:block}
+nav.bar[hidden]{display:none}
+.hbar{display:flex;height:26px;border-radius:6px;overflow:hidden;gap:2px;margin:6px 0 12px}
+.hbar .a,.legend i.a{background:var(--spruce)}
+.hbar .b,.legend i.b{background:var(--tape)}
+.hbar .c,.legend i.c{background:var(--muted)}
+.hbar .d,.legend i.d{background:var(--line)}
+.legend{list-style:none;padding:0}
+.legend li{padding-left:22px;position:relative;font-size:16px}
+.legend i{position:absolute;left:0;top:7px;width:12px;height:12px;border-radius:3px}
+.bars{display:grid;grid-template-columns:repeat(12,1fr);gap:4px;align-items:end;height:120px;margin:8px 0 4px}
+.bars span{background:var(--spruce);opacity:.4;border-radius:3px 3px 0 0;min-height:2px}
+.bars span.hi{background:var(--tape);opacity:1}
+.bars-l{display:grid;grid-template-columns:repeat(12,1fr);gap:4px;font-family:var(--mono);font-size:11px;text-align:center;color:var(--muted);margin-bottom:14px}
+.bars-l b{color:var(--tape);font-weight:500}
+.out .bars{height:90px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><button type="button" id="homelink" style="all:unset;cursor:pointer"><b>Veldschool</b> Bois Laiterie</button><span id="where">Overzicht</span></header>
+  <div class="dots" id="dots" aria-hidden="true"></div>
+
+  <main class="home on" id="home">
+    <p class="kicker">Initiatie natuurbeheer</p>
+    <h1>Leren kijken naar 3.017 m² en alles eromheen</h1>
+    <p class="lead">Korte modules van een kwartier. Elke stap begint met een vraag, elk idee landt op het perceel.</p>
+    <div class="mods">
+      <button type="button" class="mod" data-open="m1" data-time="15 min"><span class="m">Module 1</span><span class="t">Inleiding natuurbeheer</span><span class="p"></span></button>
+      <button type="button" class="mod" data-open="mp" data-time="15 min · op je eigen data"><span class="m">Module P</span><span class="t">Paddenstoelen als getuigen</span><span class="p"></span></button>
+      <div class="mod later"><span class="m">Module 2 · volgt</span><span class="t">Grasland</span></div>
+      <div class="mod later"><span class="m">Module 3 · volgt</span><span class="t">Bos</span></div>
+      <div class="mod later"><span class="m">Module 4 · volgt</span><span class="t">Plantenkennis</span></div>
+    </div>
+    <p class="muted small">Je voortgang wordt op dit toestel bewaard.</p>
+  </main>
+
+  <div class="module" id="m1" data-label="Module 1">
+  <!-- 0 -->
+  <section class="step">
+    <p class="kicker">Module 1 · Inleiding natuurbeheer</p>
+    <h1>Niets doen is ook een beheerplan. Alleen een slecht gedocumenteerd.</h1>
+    <p class="lead">Een kwartier, acht stappen, één per scherm. Elke stap begint met een vraag. Het antwoord komt pas als jij erom vraagt.</p>
+    <div class="card">
+      <p><strong>Zo werkt het</strong></p>
+      <ul>
+        <li>Eerst zelf nadenken, dan pas lezen. Fout gokken telt als leren.</li>
+        <li>Elk idee krijgt een brug naar iets dat je al kent, en een vertaling naar jullie 3.017 m².</li>
+        <li>Je sluit af met een veldopdracht en één vraag die bewust open blijft.</li>
+      </ul>
+    </div>
+    <p class="muted small">Dit is een proefmodule om te voelen of de stof je ligt. Ze volgt de thema's van Natuurmanagement – basis, maar is geen cursustekst van Inverde.</p>
+  </section>
+
+  <!-- 1 -->
+  <section class="step">
+    <p class="kicker">Stap 2 · Het vertrekpunt</p>
+    <h2>Wat gebeurt er als je twintig jaar wegblijft?</h2>
+    <details class="think">
+      <summary>Je sluit het hek in Profondeville en komt in 2046 terug. Wat staat er?</summary>
+      <div class="in">
+        <p>Bos. Of toch iets dat er hard op weg naar is: braam, sleedoorn, meidoorn, jonge essen en eiken.</p>
+        <p>In onze streken groeit bijna elk stuk grond vanzelf dicht. Grasland, heide en boomgaard bestaan alleen omdat iemand of iets de boel openhoudt: een zeis, een schaap, een boer.</p>
+      </div>
+    </details>
+    <p>Dat is de eerste les van natuurbeheer, en ze is licht ontnuchterend. Wat wij natuur noemen is hier bijna altijd <strong>halfnatuurlijk</strong>: ontstaan door eeuwen menselijk gebruik. Een bloemrijk hooiland is even goed een cultuurproduct als een kathedraal, alleen met meer sprinkhanen.</p>
+    <p><strong>Natuurbeheer</strong> is dus kiezen welk landschap je wil, en dan de ingrepen doen die het daar houden of brengen.</p>
+    <div class="card bridge">
+      <span class="tag">Brug · cassettedeck</span>
+      <p>Het landschap is een cassette die altijd op play staat, richting bos. Beheren is de pauzeknop ingedrukt houden op het fragment dat je wil horen. Laat je los, dan speelt de band gewoon verder.</p>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="step">
+    <p class="kicker">Stap 3 · Successie</p>
+    <h2>De band heeft een vaste volgorde</h2>
+    <details class="think">
+      <summary>Een omgeploegde akker blijft liggen. Wat komt eerst, wat daarna?</summary>
+      <div class="in"><p>Eerst eenjarige pioniers, dan grassen, dan hoge ruigte, dan struiken, dan bomen. Elke fase maakt de plek geschikt voor de volgende en dus ongeschikt voor zichzelf.</p></div>
+    </details>
+    <div class="succ" role="img" aria-label="Successie van kale grond naar bos. Jullie perceel staat nu bij grasland.">
+      <div style="height:8%"></div><div style="height:18%"></div><div class="here" style="height:30%"></div><div style="height:48%"></div><div style="height:70%"></div><div style="height:100%"></div>
+    </div>
+    <div class="succ-l"><span>kaal</span><span>pioniers</span><b>grasland</b><span>ruigte</span><span>struweel</span><span>bos</span></div>
+    <div class="arrow"><span>jaar 0</span><span>tijd zonder ingreep →</span><span>50+ jaar</span></div>
+    <p>Dit heet <strong>successie</strong>. Elke fase heeft eigen soorten. Veel bedreigde planten en insecten horen bij de vroege, open fases. Net die verdwijnen als niemand ingrijpt.</p>
+    <div class="card plot">
+      <span class="tag">Op jullie perceel</span>
+      <p>Jullie staan nu op <strong>grasland</strong>, jarenlang op pauze gehouden door paarden. De hoogstamboomgaard die je plant is een bewuste tussenfase: bomen boven, grasland onder. De haag is een strook struweel die je met opzet toelaat, op de plek die jij kiest.</p>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="step">
+    <p class="kicker">Stap 4 · De knoppen</p>
+    <h2>Waar draait een beheerder eigenlijk aan?</h2>
+    <details class="think">
+      <summary>Twee weides naast elkaar. De ene telt 8 plantensoorten, de andere 40. Welke kreeg het meeste mest?</summary>
+      <div class="in">
+        <p>Die met 8. Op rijke grond winnen een paar snelle groeiers alles: raaigras, brandnetel, ridderzuring. Ze nemen het licht weg en de rest verdwijnt.</p>
+        <p>Op arme grond kan niemand domineren. Er blijft licht tot op de bodem en plaats voor veel soorten naast elkaar.</p>
+      </div>
+    </details>
+    <p>Een beheerder heeft drie knoppen.</p>
+    <h3>1. Voedselrijkdom</h3>
+    <p>Minder voedsel geeft meestal meer soorten. Voedsel uit een perceel halen heet <strong>verschralen</strong>: maaien en het maaisel afvoeren, jaar na jaar. Het gaat traag.</p>
+    <h3>2. Water</h3>
+    <p>Nat, droog of wisselend bepaalt wie er kan wortelen. Deze knop is het moeilijkst terug te draaien.</p>
+    <h3>3. Verstoring</h3>
+    <p>Maaien, grazen, kappen, betreden. Verstoring zet de band terug. Hoe vaak en wanneer in het jaar bepaalt wie er overleeft.</p>
+    <div class="card bridge">
+      <span class="tag">Brug · de mix</span>
+      <p>Een voedselrijk perceel is een mix waarin één spoor alles overstemt. Verschralen is dat spoor zachter zetten tot je de andere instrumenten weer hoort. Ze zaten er vaak al die tijd in.</p>
+    </div>
+    <div class="card plot">
+      <span class="tag">Op jullie perceel</span>
+      <p>Jaren paarden betekent wellicht een <strong>voedselrijke en verdichte</strong> toplaag. Dat verklaart mee waarom een ondiepe kalkbodem, die normaal vlot draineert, bij jullie toch water vasthoudt. De kalk eronder is goed nieuws: kalkrijk en schraal is een van de soortenrijkste combinaties die we hebben.</p>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section class="step">
+    <p class="kicker">Stap 5 · Proef op het perceel</p>
+    <h2>Kies een beheer. Kijk wat er over tien jaar staat.</h2>
+    <p class="muted">Geen juist antwoord. Probeer ze allemaal en let op wat je verrast.</p>
+    <div class="opts" id="opts">
+      <button type="button" data-k="niets" aria-pressed="false">Niets doen</button>
+      <button type="button" data-k="mulch" aria-pressed="false">Maaien en het maaisel laten liggen</button>
+      <button type="button" data-k="hooi" aria-pressed="false">Maaien en het maaisel afvoeren</button>
+      <button type="button" data-k="schaap" aria-pressed="false">Een paar schapen, met rustperiodes</button>
+      <button type="button" data-k="veel" aria-pressed="false">Veel schapen, het hele jaar</button>
+    </div>
+    <div class="card out" id="out" aria-live="polite"><p class="muted">Tik een keuze aan.</p></div>
+    <details class="think">
+      <summary>Welke twee keuzes lijken op elkaar, maar draaien aan een andere knop?</summary>
+      <div class="in"><p>Maaien en laten liggen tegenover maaien en afvoeren. De verstoring is identiek. Alleen bij afvoeren draai je ook aan de voedselknop. Dat ene verschil bepaalt of je over tien jaar gras hebt of bloemen.</p></div>
+    </details>
+  </section>
+
+  <!-- 5 -->
+  <section class="step">
+    <p class="kicker">Stap 6 · Streefbeeld</p>
+    <h2>Zonder briefing kan je geen werk beoordelen</h2>
+    <details class="think">
+      <summary>Is een perceel vol brandnetels goed of slecht beheerd?</summary>
+      <div class="in"><p>Dat hangt af van wat je wou. Voor dagpauwoog en kleine vos is het een kraamkliniek. Voor een bloemrijk hooiland is het een mislukking. Zonder doel bestaat er geen goed of slecht beheer.</p></div>
+    </details>
+    <p>Daarom werkt elke beheerder met een <strong>natuurstreefbeeld</strong>: het type natuur dat je op een plek wil bereiken, concreet genoeg om later te kunnen nagaan of je er bent.</p>
+    <p>Er zijn twee manieren om ernaartoe te werken:</p>
+    <ul>
+      <li><strong>Patroonbeheer:</strong> je stuurt op een vast beeld met vaste ingrepen. Elk jaar in juli maaien en afvoeren, bijvoorbeeld.</li>
+      <li><strong>Procesbeheer:</strong> je zet een proces in gang en aanvaardt wat eruit komt. Jaarrond extensieve begrazing op grote schaal, of gewoon niets doen.</li>
+    </ul>
+    <p>Daarna volgt <strong>monitoring</strong>: tellen en kijken of het werkt, en bijsturen als dat niet zo is.</p>
+    <div class="card bridge">
+      <span class="tag">Brug · je eigen vak</span>
+      <p>Het streefbeeld is de briefing. Patroonbeheer is een campagne met een draaiboek. Procesbeheer is een goed idee de wereld in sturen en zien wat het publiek ermee doet. Monitoring is de evaluatie die bij campagnes ook altijd beloofd wordt.</p>
+    </div>
+    <div class="card plot">
+      <span class="tag">Op jullie perceel</span>
+      <p>Een perceel van 3.017 m² is te klein voor echt procesbeheer. Jullie doen dus patroonbeheer, en dat vraagt een streefbeeld per zone. Voor de 900 m² onder de hoogstammen zou dat kunnen zijn: bloemrijk grasland op kalk, licht begraasd. Dat ene zinnetje beslist al over mest, maaidatum en aantal schapen.</p>
+    </div>
+  </section>
+
+  <!-- 6 -->
+  <section class="step">
+    <p class="kicker">Stap 7 · Vijf soorten</p>
+    <h2>Wie vertelt je in welke fase je staat?</h2>
+    <p>Planten zijn getuigen. Deze vijf kom je op of rond het perceel vrijwel zeker tegen. Zeg eerst de Franse naam hardop, tik dan.</p>
+    <div class="spp" id="spp"></div>
+    <p class="muted small">Het examen vraagt alleen Nederlandse namen. Het Frans is voor de kweker en de buren.</p>
+  </section>
+
+  <!-- 7 -->
+  <section class="step">
+    <p class="kicker">Stap 8 · Vijf vragen</p>
+    <h2>Even nagaan wat is blijven hangen</h2>
+    <div id="quiz"></div>
+    <p class="score" id="score"></p>
+
+    <h3>Veldopdracht voor het volgende bezoek</h3>
+    <div class="chk" id="chk">
+      <label><input type="checkbox" id="c1"><span>Zoek de plek met de meeste brandnetels. Wat stond of lag daar vroeger? Brandnetels wijzen voedsel aan.</span></label>
+      <label><input type="checkbox" id="c2"><span>Zoek op de rand van het perceel één plek waar de successie al verder staat dan grasland. Welke struik kwam eerst?</span></label>
+      <label><input type="checkbox" id="c3"><span>Tel op één vierkante meter gras hoeveel verschillende bladvormen je ziet. Namen hoeven niet. Noteer het getal: dat is je nulmeting.</span></label>
+    </div>
+
+    <h3>De vraag die open blijft</h3>
+    <div class="card">
+      <p class="open-q">Als elk landschap hier een keuze is, welk moment in de geschiedenis van dit perceel kies je dan als het echte?</p>
+      <p class="muted small">Hier komt geen antwoord onder. Neem de vraag mee naar buiten.</p>
+    </div>
+    <footer><p class="muted small">Proefmodule op basis van algemene ecologie en beheerprincipes. De officiële leerstof en soortenlijst vind je bij <a href="https://www.inverde.be/opleidingen/natuurmanagement-basis-zelfstudie">Inverde</a>, verdieping op <a href="https://www.ecopedia.be">Ecopedia</a>.</p></footer>
+  </section>
+  </div>
+
+  <div class="module" id="mp" data-label="Module P">
+  <section class="step">
+    <p class="kicker">Module P · Paddenstoelen als getuigen</p>
+    <h1>Je hebt 540 getuigenverklaringen. Tijd voor het verhoor.</h1>
+    <p class="lead">Deze module draait op je eigen data: 540 waarnemingen rond Burnot, van 28 mei 2022 tot 6 november 2026, goed voor 184 verschillende namen.</p>
+    <div class="card">
+      <p><strong>De vraag van deze module</strong></p>
+      <p>Tot nu noteerde je <em>wat</em> er stond en bij welk weer. Een beheerder vraagt iets anders: wat zegt deze zwam over de plek waar ze staat?</p>
+    </div>
+    <p class="muted small">Deze module gaat over lezen van het landschap. Ze zegt niets over eetbaarheid. In je lijst staan vier soorten met een gifmelding, waaronder de groene knolamaniet.</p>
+  </section>
+
+  <section class="step">
+    <p class="kicker">Stap 2 · Het organisme</p>
+    <h2>Wat je fotografeert is de appel. Waar staat de boom?</h2>
+    <details class="think">
+      <summary>Je vond 26 keer een grote parasolzwam. Hoeveel organismen heb je dan gezien?</summary>
+      <div class="in"><p>Dat weet niemand, maar wellicht veel minder dan 26. De paddenstoel is alleen het vruchtlichaam. Het organisme zelf is de <strong>zwamvlok</strong>: een netwerk van draden in bodem, strooisel of hout, dat er het hele jaar zit en jaren oud kan zijn.</p></div>
+    </details>
+    <p>Dat verandert wat een waarneming betekent. Een paddenstoel in oktober bewijst dat de zwamvlok er al lang zit. Geen paddenstoel bewijst niets: de zwamvlok kan er zijn en gewoon zwijgen.</p>
+    <p>Voor beheer is dat het punt. Wat je met de bodem doet, raakt een organisme dat je elf maanden per jaar niet ziet.</p>
+    <div class="card bridge">
+      <span class="tag">Brug · het album</span>
+      <p>De paddenstoel is de release. De zwamvlok is de jaren thuis opnemen op cassette die eraan voorafgingen. Wie alleen releases telt, mist het meeste werk.</p>
+    </div>
+  </section>
+
+  <section class="step">
+    <p class="kicker">Stap 3 · Drie beroepen</p>
+    <h2>Waar leeft een zwam van?</h2>
+    <details class="think">
+      <summary>In je data zit één beroep dat ruim twee derde van de waarnemingen levert. Welk?</summary>
+      <div class="in"><p>De opruimers. 375 van de 540 waarnemingen zijn saprotrofen: zwammen die dood hout en strooisel afbreken.</p></div>
+    </details>
+    <div class="hbar" role="img" aria-label="Verdeling van 540 waarnemingen: 375 opruimers, 137 ruilhandelaars, 17 parasieten, 11 overige.">
+      <span style="flex:375" class="a"></span><span style="flex:137" class="b"></span><span style="flex:17" class="c"></span><span style="flex:11" class="d"></span>
+    </div>
+    <ul class="legend">
+      <li><i class="a"></i><strong>Opruimers (saprotrofen) · 375.</strong> Breken dood materiaal af en maken de voedingsstoffen weer vrij. Zonder hen ligt het bos vol takken van 1950.</li>
+      <li><i class="b"></i><strong>Ruilhandelaars (mycorrhiza) · 137.</strong> Leven aan boomwortels. De zwam levert water en mineralen, de boom betaalt in suikers. Je eekhoorntjesbrood, vliegenzwam en russula's horen hier.</li>
+      <li><i class="c"></i><strong>Parasieten · 17.</strong> Leven van een levende gastheer. Honingzwam is de bekendste.</li>
+      <li><i class="d"></i><strong>Overige · 11.</strong> Onder meer slijmzwammen, die strikt genomen geen zwammen zijn.</li>
+    </ul>
+    <div class="card plot">
+      <span class="tag">Wat je verhouding zegt</span>
+      <p>Eén op vier van je waarnemingen is een ruilhandelaar. Mycorrhizazwammen zijn gevoelig voor stikstof en bodemverstoring en gaan op veel plaatsen achteruit. Dat ze bij jou zo stevig in de lijst staan, pleit voor de bosbodem rond Burnot.</p>
+    </div>
+  </section>
+
+  <section class="step">
+    <p class="kicker">Stap 4 · Je kroongetuigen</p>
+    <h2>Je toplijst beschrijft een bos zonder dat je een boom noteerde</h2>
+    <details class="think">
+      <summary>Porseleinzwam 15 keer, beukwortelzwam 12 keer. Welke boom domineert je wandelgebied?</summary>
+      <div class="in"><p>Beuk. Porseleinzwam groeit op dode en stervende beukentakken, beukwortelzwam op begraven beukenwortels. Je data zegt dus ook iets over <strong>dood hout</strong>: dat ligt en hangt er, en het mag blijven.</p></div>
+    </details>
+    <p>Dat klopt met de kaart in je eigen app. Het grootste beschermde habitat in je gebied is beukenbos:</p>
+    <ul>
+      <li><strong>9130</strong> beukenbos op rijkere bodem: ruim 18 ha</li>
+      <li><strong>9180</strong> hellingbos met esdoorn en linde: 6 ha</li>
+      <li><strong>6210</strong> kalkgrasland: 2,2 ha in acht vlekjes</li>
+      <li><strong>9110</strong> beukenbos op zure bodem: 1,4 ha</li>
+    </ul>
+    <p>Die viercijferige codes zijn Europese habitattypes. Ze komen terug in de cursus onder Europees beschermde natuur.</p>
+    <h3>Nog drie getuigen uit je top tien</h3>
+    <ul>
+      <li><strong>Vliegenzwam (11):</strong> ruilhandelaar van vooral berk. Waar ze staat, staat of stond een berk in de buurt.</li>
+      <li><strong>Grote parasolzwam (26):</strong> opruimer van bosranden en open, grazige plekken. Je loopt dus vaak langs randen.</li>
+      <li><strong>Nevelzwam (10):</strong> opruimer in dik, voedselrijk strooisel. Veel nevelzwam wijst op stikstof.</li>
+    </ul>
+    <div class="card bridge">
+      <span class="tag">Brug · doelgroeponderzoek</span>
+      <p>Je hoeft de bomen niet te tellen als je weet wie er komt eten. Zwammen zijn het publiek, en uit het publiek lees je de programmatie.</p>
+    </div>
+  </section>
+
+  <section class="step">
+    <p class="kicker">Stap 5 · Seizoen en weer</p>
+    <h2>Wie komt wanneer buiten?</h2>
+    <p class="muted">Kies een soort. Raad eerst in welke maanden jij ze vond.</p>
+    <div class="opts" id="popts"></div>
+    <div class="card out" id="pout" aria-live="polite"><p class="muted">Tik een soort aan.</p></div>
+    <details class="think">
+      <summary>Waarom zegt het weer bijna niets over de echte tonderzwam?</summary>
+      <div class="in"><p>Omdat het vruchtlichaam overjarig is: het staat er jaren en groeit elk jaar een laag aan. Je vindt het bij vorst en bij twintig graden. Voor zulke soorten telt de plek, het weer nauwelijks.</p></div>
+    </details>
+  </section>
+
+  <section class="step">
+    <p class="kicker">Stap 6 · De waarnemer</p>
+    <h2>Wat meet deze grafiek eigenlijk?</h2>
+    <div class="bars" id="pmonths" role="img" aria-label="Aantal waarnemingen per maand. Oktober telt er 276, alle andere maanden 78 of minder."></div>
+    <div class="bars-l"><span>j</span><span>f</span><span>m</span><span>a</span><span>m</span><span>j</span><span>j</span><span>a</span><span>s</span><b>o</b><span>n</span><span>d</span></div>
+    <details class="think">
+      <summary>Oktober: 276 waarnemingen. September: 38. Groeien er in oktober zeven keer meer paddenstoelen?</summary>
+      <div class="in">
+        <p>Voor een deel is het seizoen. Maar deze grafiek meet ook jou: wanneer je er was, hoe lang, en of je de app al had. In 2026 noteerde je er 264, in 2023 maar 15. Het bos is in die tijd niet zeventien keer rijker geworden.</p>
+        <p>Dit heet <strong>waarnemersinspanning</strong>, en het is het eerste wat een beheerder nakijkt voor hij een trend gelooft.</p>
+      </div>
+    </details>
+    <p>Daarom is wat je sinds oktober doet zo waardevol: per bezoek een vaste route, een vaste lijst, en ook noteren wat je <em>niet</em> zag. Vijf van de twaalf soorten gezien is een meting. Vijf leuke vondsten is een anekdote.</p>
+    <div class="card plot">
+      <span class="tag">Dit is monitoring</span>
+      <p>Vaste route, vaste methode, afwezigheid meetellen. Je hebt zonder het te weten de kern van module 1 al gebouwd. De commissie noteert dat met tegenzin.</p>
+    </div>
+  </section>
+
+  <section class="step">
+    <p class="kicker">Stap 7 · Naar het perceel</p>
+    <h2>Wat mag je op Bois Laiterie verwachten?</h2>
+    <details class="think">
+      <summary>Je plant appels, peren en een haag met haagbeuk en hazelaar. Onder welke komen ooit paddenstoelen?</summary>
+      <div class="in">
+        <p>Onder de haag. Haagbeuk en hazelaar werken met ruilhandelaars die paddenstoelen vormen. Appel, peer, pruim en ook meidoorn en sleedoorn werken met een ander type schimmel, dat volledig ondergronds blijft.</p>
+        <p>Je fruitbomen hebben dus evengoed schimmelpartners. Je zal ze alleen nooit fotograferen.</p>
+      </div>
+    </details>
+    <h3>In het gras</h3>
+    <p>Op een voedselrijke oude paardenweide verwacht je weidechampignons, inktzwammen en mestzwammetjes. Dat zijn opruimers van rijke grond.</p>
+    <p>De getuigen waar je op hoopt zijn <strong>wasplaten</strong>: kleine, felgekleurde graslandzwammen die alleen verschijnen in oud, schraal, onbemest grasland. Ze zijn zowat het strengste keurmerk dat een grasland kan krijgen, en ze komen pas na vele jaren.</p>
+    <div class="card plot">
+      <span class="tag">Je streefbeeld ligt op wandelafstand</span>
+      <p>Die acht vlekjes kalkgrasland (6210) in je wandelgebied liggen op dezelfde kalk als jullie perceel. Ga er in mei en in oktober kijken. Zo ziet het doel eruit, met de bloemen in het voorjaar en de zwammen in het najaar.</p>
+    </div>
+    <div class="card bridge">
+      <span class="tag">Brug · gietijzer</span>
+      <p>Schraal grasland bouw je op zoals de laag op een gietijzeren pan: traag, door steeds hetzelfde te doen, en één keer mest is als één keer afwasmiddel.</p>
+    </div>
+  </section>
+
+  <section class="step">
+    <p class="kicker">Stap 8 · Vijf vragen</p>
+    <h2>Het verhoor van de verhoorder</h2>
+    <div id="pquiz"></div>
+    <p class="score" id="pscore"></p>
+    <h3>Veldopdracht voor het volgende bezoek</h3>
+    <div class="chk">
+      <label><input type="checkbox" id="p1"><span>Noteer bij drie vondsten eerst het beroep (opruimer, ruilhandelaar, parasiet) en pas daarna de naam.</span></label>
+      <label><input type="checkbox" id="p2"><span>Zoek bij één ruilhandelaar de partnerboom. Kijk binnen tien meter en schrijf op welke bomen er staan.</span></label>
+      <label><input type="checkbox" id="p3"><span>Loop langs één vlekje kalkgrasland en noteer drie dingen die er anders zijn dan op het perceel.</span></label>
+    </div>
+    <h3>De vraag die open blijft</h3>
+    <div class="card">
+      <p class="open-q">Als het organisme er het hele jaar zit en maar af en toe iets laat zien, wat heb je dan eigenlijk waargenomen?</p>
+      <p class="muted small">Ook hier komt geen antwoord onder.</p>
+    </div>
+    <footer><p class="muted small">Cijfers uit je eigen Burnot Boswijzer (data tot 6 november 2026). De beroepen per waarneming en de habitatkaart komen uit dat bestand. De ecologische uitleg is algemene kennis en geen cursustekst van Inverde.</p></footer>
+  </section>
+  </div>
+</div>
+
+<nav class="bar" id="bar" hidden><div class="in">
+  <button type="button" id="prev">Terug</button>
+  <button type="button" id="next">Begin</button>
+</div></nav>
+
+<script>
+(function(){
+  var KEY='veldschool-v2', state={mod:null,pos:{},chk:{}};
+  try{var s=JSON.parse(localStorage.getItem(KEY)||'null'); if(s&&s.pos) state=s; if(!state.chk) state.chk={};}catch(e){}
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+  var $=function(id){return document.getElementById(id);};
+  var home=$('home'), dots=$('dots'), where=$('where'), bar=$('bar'), prev=$('prev'), next=$('next');
+  var mods={}; [].forEach.call(document.querySelectorAll('.module'),function(m){mods[m.id]={el:m,steps:[].slice.call(m.querySelectorAll('.step')),label:m.dataset.label};});
+  if(state.mod&&!mods[state.mod]) state.mod=null;
+
+  function render(scroll){
+    var id=state.mod; save();
+    home.classList.toggle('on',!id);
+    Object.keys(mods).forEach(function(k){mods[k].el.classList.toggle('on',k===id);});
+    bar.hidden=!id; dots.innerHTML='';
+    if(!id){
+      where.textContent='Overzicht';
+      [].forEach.call(document.querySelectorAll('.mod[data-open]'),function(b){
+        var m=mods[b.dataset.open], p=state.pos[b.dataset.open], el=b.querySelector('.p');
+        b.classList.toggle('busy',p>0&&p<m.steps.length-1);
+        el.textContent=(p===undefined?'Nog niet begonnen':(p>=m.steps.length-1?'Doorlopen':'Bezig: stap '+(p+1)+' van '+m.steps.length))+' · '+b.dataset.time;
+      });
+    }else{
+      var m=mods[id], i=Math.min(state.pos[id]||0,m.steps.length-1);
+      m.steps.forEach(function(el,n){el.classList.toggle('on',n===i); var d=document.createElement('span'); d.className=n<i?'done':(n===i?'now':''); dots.appendChild(d);});
+      where.textContent=m.label+' · stap '+(i+1)+'/'+m.steps.length;
+      prev.textContent=i===0?'Overzicht':'Terug';
+      next.textContent=i===0?'Begin':(i===m.steps.length-1?'Naar het overzicht':'Volgende stap');
+    }
+    if(scroll) window.scrollTo(0,0);
+  }
+  [].forEach.call(document.querySelectorAll('.mod[data-open]'),function(b){b.addEventListener('click',function(){
+    var id=b.dataset.open; state.mod=id; if(state.pos[id]===undefined||state.pos[id]>=mods[id].steps.length-1) state.pos[id]=0; render(true);});});
+  prev.addEventListener('click',function(){var id=state.mod,i=state.pos[id]||0; if(i===0) state.mod=null; else state.pos[id]=i-1; render(true);});
+  next.addEventListener('click',function(){var id=state.mod,i=state.pos[id]||0; if(i>=mods[id].steps.length-1) state.mod=null; else state.pos[id]=i+1; render(true);});
+  $('homelink').addEventListener('click',function(){state.mod=null; render(true);});
+
+  function pick(box,fn){box.addEventListener('click',function(e){var b=e.target.closest('button'); if(!b) return;
+    [].forEach.call(box.children,function(x){x.setAttribute('aria-pressed',x===b?'true':'false');}); fn(b.dataset.k);});}
+
+  // module 1: beheerkeuze
+  var R={
+    niets:['Jaar 3','Hoge ruigte van brandnetel, distel en braam.','Jaar 10','Struweel met sleedoorn en meidoorn, de eerste jonge bomen. Goed nieuws voor zangvogels en muizen. Slecht nieuws voor graslandbloemen en voor iedereen die bij zijn fruitbomen wil geraken.'],
+    mulch:['Jaar 3','Netjes en groen. Onder het gras groeit een viltlaag van oud maaisel.','Jaar 10','Nog altijd netjes en groen, en ongeveer even soortenarm als nu. Alles wat je maait, geef je als mest terug. Veel werk voor een resultaat dat stilstaat.'],
+    hooi:['Jaar 3','Weinig zichtbaar verschil. Op een oude paardenweide zit veel voorraad in de bodem.','Jaar 10','Het gras groeit minder hoog en staat opener. De eerste kruiden schuiven in: margriet, knoopkruid, met geluk kalkminnaars. Verschralen is een kwestie van jaren tot decennia, maar het is de enige keuze hier die de voedselknop omlaag draait.'],
+    schaap:['Jaar 3','Afwisseling van korte en langere plekken. Schapen kiezen wat ze lekker vinden en laten de rest staan.','Jaar 10','Gevarieerde structuur, wat goed is voor insecten. Maar schapen voeren weinig voedsel af: wat erin gaat, komt er grotendeels weer uit. Bomen hebben stevige bescherming nodig. Vaak werkt begrazing het best in combinatie met af en toe maaien en afvoeren.'],
+    veel:['Jaar 3','Een biljartlaken met kale plekken bij het hek en de drinkbak.','Jaar 10','Vertrapte, verdichte zode, mestplekken vol brandnetel, geschilde stammen. Dezelfde ingreep als hiernaast, alleen te veel en te lang. De dosis maakt het beheer.']
+  };
+  pick($('opts'),function(k){var r=R[k]; $('out').innerHTML='<p class="yr">'+r[0]+'</p><p>'+r[1]+'</p><p class="yr">'+r[2]+'</p><p>'+r[3]+'</p>';});
+
+  var SP=[
+    ['Grote brandnetel','grande ortie','Wijst op veel stikstof. Waar ze massaal staat, lag ooit mest, hooi of een latrine.'],
+    ['Glanshaver','fromental','Hoog gras met losse, glanzende pluim. Het typische gras van hooiland dat gemaaid en niet zwaar bemest wordt.'],
+    ['Sleedoorn','prunellier','Zwarte twijgen met doornen, bloeit wit voor het blad komt. Rukt met worteluitlopers het grasland in: struweel in actie.'],
+    ['Eenstijlige meidoorn','aubépine à un style','Diep ingesneden blad, bloeit in mei na het blad. Ruggengraat van elke haag in de Condroz.'],
+    ['Zomereik','chêne pédonculé','Eikels op lange steel, blad bijna zonder steel. Het eindstation van de band.']
+  ];
+  SP.forEach(function(s){var b=document.createElement('button'); b.type='button'; b.className='sp';
+    b.innerHTML='<span class="nl">'+s[0]+'<i>Frans?</i></span><span class="back"><span class="fr">'+s[1]+'</span><br>'+s[2]+'</span>';
+    b.addEventListener('click',function(){b.classList.toggle('open');}); $('spp').appendChild(b);});
+
+  function quiz(boxId,scoreId,Q,hi,lo){
+    var box=$(boxId), good=0, answered=0;
+    Q.forEach(function(q,qi){
+      var d=document.createElement('div'); d.className='q';
+      var h='<p class="qq">'+(qi+1)+'. '+q[0]+'</p><div class="a">';
+      q[1].forEach(function(a,ai){h+='<button type="button" data-i="'+ai+'">'+a+'</button>';});
+      d.innerHTML=h+'</div><p class="why">'+q[3]+'</p>';
+      d.addEventListener('click',function(e){
+        var b=e.target.closest('button'); if(!b||d.classList.contains('done')) return;
+        var i=+b.dataset.i; d.classList.add('done'); answered++;
+        [].forEach.call(d.querySelectorAll('button'),function(x,n){x.disabled=true; if(n===q[2]) x.classList.add('ok');});
+        if(i===q[2]) good++; else b.classList.add('no');
+        if(answered===Q.length) $(scoreId).textContent=good+' op '+Q.length+'. '+(good>=4?hi:lo);
+      });
+      box.appendChild(d);
+    });
+  }
+  quiz('quiz','score',[
+    ['Wat gebeurt er met bijna elk stuk grond in België als niemand nog ingrijpt?',['Het blijft grasland','Het groeit dicht tot bos','Het wordt heide'],1,'Successie loopt hier vrijwel overal richting bos.'],
+    ['Je maait en laat het maaisel liggen. Wat doet dat met de voedselrijkdom?',['Die daalt snel','Die blijft ongeveer gelijk','Die daalt traag'],1,'Je geeft terug wat je afmaait. Alleen afvoeren verschraalt.'],
+    ['Waarom is voedselarme grond vaak soortenrijker?',['Omdat er minder dieren grazen','Omdat geen enkele soort kan domineren','Omdat de bodem er warmer is'],1,'Snelle groeiers kunnen niet alles overwoekeren, dus blijft er licht en plaats voor velen.'],
+    ['Wat is een natuurstreefbeeld?',['Een foto van het perceel voor de werken','Het type natuur dat je op een plek wil bereiken','Een lijst van beschermde soorten'],1,'Het is de briefing waartegen je later je beheer afmeet.'],
+    ['Welke situatie is patroonbeheer?',['Elk jaar in juli maaien en afvoeren','Een rivier vrij laten meanderen','Een bos twintig jaar met rust laten'],0,'Vaste ingreep, vast doelbeeld. De andere twee laten een proces zijn gang gaan.']
+  ],'De commissie is voorzichtig onder de indruk.','Stof genoeg voor een tweede lezing. Dat heet verschralen: het vraagt herhaling.');
+
+  // module P: seizoen en weer, uit de eigen data
+  var MN=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+  var PS={
+    parasol:['Grote parasolzwam','opruimer',[0.01,0,0.01,0.01,0.12,0.29,0.31,0.72,0.9,1,0.82,0.07],[8,9,10],'12,4 tot 16,1 °C','26 waarnemingen. Een echte najaarssoort die zacht weer wil: je vond ze nooit bij kou.'],
+    fluweel:['Gewoon fluweelpootje','opruimer op hout',[1,0.56,0.3,0.06,0.01,0.01,0,0,0.01,0.02,0.09,0.63],[1,11,12],'-0,4 tot 11,8 °C','De wintersoort. Ze verschijnt als de rest stopt en verdraagt vorst.'],
+    parel:['Parelamaniet','ruilhandelaar',[0,0,0,0.01,0.29,0.81,1,0.84,0.53,0.76,0.37,0.04],[5,7],'18,5 tot 20,7 °C','Een zomersoort. Jij vond ze alleen in warme weken, lang voor het klassieke paddenstoelenseizoen.'],
+    russula:['Regenboogrussula','ruilhandelaar',[0.01,0,0,0,0.18,0.69,0.97,1,0.83,0.47,0.23,0.02],[6,9,10],'12,6 tot 15,0 °C','Partner van beuk en eik. Piekt in de zomer, maar jij trof ze bij gematigd weer.'],
+    tonder:['Echte tonderzwam','opruimer op hout, overjarig',[0.42,0.55,0.97,1,0.72,0.36,0.29,0.23,0.16,0.17,0.2,0.27],[7,9,11,12],'-0,4 tot 19,8 °C','Staat er het hele jaar. De curve toont vooral wanneer mensen ze opmerken: in het kale voorjaarsbos.']
+  };
+  Object.keys(PS).forEach(function(k){var b=document.createElement('button'); b.type='button'; b.dataset.k=k; b.setAttribute('aria-pressed','false'); b.textContent=PS[k][0]; $('popts').appendChild(b);});
+  pick($('popts'),function(k){
+    var s=PS[k], h='<p class="yr">'+s[1]+'</p><div class="bars" role="img" aria-label="Seizoenscurve per maand">';
+    s[2].forEach(function(v,i){h+='<span'+(s[3].indexOf(i+1)>-1?' class="hi"':'')+' style="height:'+Math.max(2,Math.round(v*100))+'%"></span>';});
+    h+='</div><div class="bars-l">'+MN.map(function(m,i){return s[3].indexOf(i+1)>-1?'<b>'+m[0]+'</b>':'<span>'+m[0]+'</span>';}).join('')+'</div>';
+    h+='<p><strong>Jouw maanden:</strong> '+s[3].map(function(m){return MN[m-1];}).join(', ')+'. Oranje is wanneer jij ze vond, de balken zijn de algemene seizoenscurve.</p>';
+    h+='<p><strong>Weekgemiddelde op je vondstdagen:</strong> '+s[4]+'</p><p>'+s[5]+'</p>';
+    $('pout').innerHTML=h;
+  });
+  [1,3,1,1,11,12,42,38,38,276,78,37].forEach(function(v,i){var sp=document.createElement('span'); sp.style.height=Math.max(2,Math.round(v/276*100))+'%'; if(i===9) sp.className='hi'; $('pmonths').appendChild(sp);});
+
+  quiz('pquiz','pscore',[
+    ['Wat is een paddenstoel?',['Het hele organisme','Het vruchtlichaam van een zwamvlok','De wortel van een schimmel'],1,'Het organisme is het netwerk in bodem of hout. De paddenstoel dient alleen voor de sporen.'],
+    ['Welk beroep heeft eekhoorntjesbrood?',['Opruimer van strooisel','Parasiet op beuk','Ruilhandelaar aan boomwortels'],2,'Mycorrhiza: mineralen en water in ruil voor suikers.'],
+    ['Veel porseleinzwam in een bos betekent vooral:',['Er staat beuk en er is dood hout','De bodem is zuur','Het bos is jong'],0,'Ze groeit op dode en stervende beukentakken.'],
+    ['Je telt in 2026 veel meer zwammen dan in 2023. Wat kijk je eerst na?',['Of het natter was','Of je even vaak en even lang ging kijken','Of de soorten veranderd zijn'],1,'Waarnemersinspanning. Zonder vaste methode vergelijk je vooral je eigen agenda.'],
+    ['Welke zwammen gelden als keurmerk voor oud, schraal grasland?',['Inktzwammen','Wasplaten','Weidechampignons'],1,'Wasplaten verdwijnen bij bemesting en keren pas na vele jaren terug.']
+  ],'De getuigen bevestigen je verklaring.','De getuigen spreken elkaar tegen. Nog een ronde.');
+
+  [].forEach.call(document.querySelectorAll('.chk input'),function(c){c.checked=!!state.chk[c.id]; c.addEventListener('change',function(){state.chk[c.id]=c.checked; save();});});
+  render(false);
+})();
+</script>
+<script>
+if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}
+</script>
+</body>
+</html>
